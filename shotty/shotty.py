@@ -1,4 +1,5 @@
 import boto3
+import botocore
 import click
 
 session = boto3.Session(profile_name='shotty')
@@ -63,6 +64,7 @@ def instances():
 @instances.command('snapshot',
 	help="Create snapshots of all volumes")
 @click.option('--project', default=None, help="Only instances for this project (tag Project:<name>)")
+
 def create_snapshots(project):
 	"Create snapshots of all volumes"
 	instances = filter_instances(project)
@@ -83,7 +85,7 @@ def create_snapshots(project):
 		i.wait_until_running()
 
 	print("Job's done!")
-	
+
 	return
 
 
@@ -123,7 +125,11 @@ def start_instances(project):
 
 	for i in instances:
 		print ("starting {0}...".format(i.id))
-		i.start()
+		try:
+			i.start()
+		except botocore.exceptions.ClientError as e:
+			print ("Could not start  {0}...".format(i.id) + str(e))
+			continue
 
 	return
 
@@ -137,7 +143,11 @@ def stop_instances(project):
 
 	for i in instances:
 		print ("stopping {0}...".format(i.id))
-		i.stop()
+		try:
+			i.stop()
+		except botocore.exceptions.ClientError as e:
+			print ("Could not stop  {0}...".format(i.id) + str(e))
+			continue
 
 	return
 
