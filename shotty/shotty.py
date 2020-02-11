@@ -15,8 +15,9 @@ def snapshots():
 
 @snapshots.command ('list')
 @click.option('--project', default=None, help="Only snapshots for this project (tag Project:<name>)")
+@click.option('--all', 'list_all', default=False, is_flag=True,help="List all snapshots for each volume, not just the most recent")
 
-def list_snapshots(project):
+def list_snapshots(project, list_all):
 	"List EC2 snapshots"
 	instances = filter_instances(project)
 
@@ -24,13 +25,15 @@ def list_snapshots(project):
 		for v in i.volumes.all():
 			for s in v.snapshots.all():
 				print (", ".join((
-				s.id,
-				v.id,
-				i.id,
-				s.state,
-				s.progress,
-				s.start_time.strftime("%c")
+					s.id,
+					v.id,
+					i.id,
+					s.state,
+					s.progress,
+					s.start_time.strftime("%c")
 				)))
+
+				if s.state == 'completed' and not list_all: break
 
 	return			
 
@@ -128,7 +131,7 @@ def start_instances(project):
 		try:
 			i.start()
 		except botocore.exceptions.ClientError as e:
-			print ("Could not start  {0}...".format(i.id) + str(e))
+			print ("Could not start {0}...".format(i.id) + str(e))
 			continue
 
 	return
